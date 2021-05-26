@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This not snake game</title>
+    <style>
+        td{
+            width: 20px;
+            height: 20px;
+        }
+        .snake{
+            background-color:green;
+        }
+        .fruit{background-color:red;}
+    </style>
+</head>
+<body>
+    <h1>this is <span style="color:red;">NOT </span><span style="color:green;">SNAKE GAME!</span></h1>
+    <table style="border: 1px solid red;" id="display">
+    </table>
+    <h4 style="color:green;" id="point">Point: 0</h4>
+    <h4 style="color:red;" id="life"></h4>
+    <img src="heart.png" style="width: 3%;"id="heart1" >
+    <img src="heart.png" style="width: 3%;"id="heart2" >
+    <img src="heart.png" style="width: 3%;"id="heart3" >
+    <h4>lâu lâu bị lỗi <span style="color:red">runtime</span> do hàm random vs in lại nhiều bị lag, refresh trang chơi lại là oke!</h4>
+    <h4><span style="color:red">4 đốt</span> check <span style="color:green;">snake </span>cắn vào thân rắn mới hiệu lực :((</h4>
+    <audio id="audio" src="Bite_sound.mp3"></audio>
+    <audio id="hurt" src="dead_sound.mp3"></audio>
+    <audio id="gameover" src="game_over_sound.mp3"></audio>
+    <script>
+        let snake=[
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        ];
+        oy=2;
+        ox=2;
+        let life = 3;
+        let point=0;
+        let fruit_x=0;
+        let fruit_y=0;
+        let snakeBody_x=[];
+        let snakeBody_y=[];
+        let displayLife = document.getElementById("life");
+
+
+        /** hàm này dùng để vẽ lại màn hình game mỗi khi update thông số mảng  */
+
+        function gamedraw(){
+            let table="";
+            for(let oy=0;oy<snake.length;oy++) {
+                table+=("<tr>")
+                for(let ox=0;ox<snake[oy].length;ox++) {
+                    if(snake[oy][ox]==1){//snake
+                        table+=("<td class='snake'>"+"</td>");
+                    }else if(snake[oy][ox]==5){// fruit
+                        table+=("<td class='fruit'>"+"</td>");
+                    }else{
+                        table+=("<td>"+"</td>");
+                    }
+                }
+                table+=("</tr>");
+            }
+            document.getElementById("display").innerHTML=table;
+        }
+
+
+        /** hàm này để tạo các chấm đỏ mới vs vị trí ngẫu nhiên    */ 
+        
+        function fruit(){//vi tri mới
+             fruit_x = Math.floor(Math.random()*(snake[oy].length-1));
+             fruit_y = Math.floor(Math.random()*(snake.length-1));
+             snake[fruit_y][fruit_x]=5;
+        }
+        fruit();
+
+        const limit_x = snake[oy].length-1; //vùng giới hạn ( border )
+        const limit_y = snake.length-1; //vùng giới hạn ( border )
+
+        let direction = ""; //lưu hướng di chuyển khi người dùng ấn nút
+
+        setInterval(moveSnake,200) //hàm lặp lại việc gọi hàm mỗi 0.2s
+
+        let timeCollionBorders=0; /*dùng để đếm thời gian snake mỗi lần chạm vào đuôi hoặc rìa ngoài, 
+        nếu chạm nhiều lần trong khoảng 1s thì chỉ tính 1 lần */ 
+
+        ///****       để cập nhật lại vị trí phần thân theo vị trí phần đầu   /// 
+
+        function snakeUpdate(oy,ox){  
+            for(var i=snakeBody_x.length-1;i>=0;i--){
+                if(i==snakeBody_x.length-1){
+                    snake[snakeBody_y[i]][snakeBody_x[i]]=0;
+                    snakeBody_x[i]=snakeBody_x[i-1];
+                    snakeBody_y[i]=snakeBody_y[i-1];
+                }else if(i==0){
+                    snakeBody_x[i]=ox;
+                    snakeBody_y[i]=oy;
+                    snake[snakeBody_y[i]][snakeBody_x[i]]=1;
+                }else{
+                    snake[snakeBody_y[i]][snakeBody_x[i]]=1;
+                    snakeBody_x[i]=snakeBody_x[i-1];
+                    snakeBody_y[i]=snakeBody_y[i-1];
+                    
+                }
+            }
+        }
+        ///***   dùng để hiển thị số mạng hiện tại mỗi lần gọi và truyền tham số    ////
+        function drawlife(life){
+            let heart1 = document.getElementById("heart1");
+            let heart2 = document.getElementById("heart2");
+            let heart3 = document.getElementById("heart3");
+            switch(life){
+                case 3:
+                    heart3.style.display="inline";
+                    heart2.style.display="inline";
+                    heart1.style.display="inline";
+                    break;
+                case 2:
+                    heart3.style.display="none";
+                    heart2.style.display="inline";
+                    heart1.style.display="inline";
+                    break;
+                case 1:
+                    heart3.style.display="none";
+                    heart2.style.display="none";
+                    heart1.style.display="inline";
+                    break;
+                case 0:
+                    heart3.style.display="none";
+                    heart2.style.display="none";
+                    heart1.style.display="none";
+                    break;
+            }
+        }
+
+        let is_die=false; //kiểm tra snake, nếu die thì vô hiệu hóa hàm moveSnake --> vô hiệu hóa hàm setInteral()   ///
+        
+        // hàm này để control and tạo run cho đầu rắn    //
+
+        function moveSnake(){
+            if(is_die==false){
+                timeCollionBorders++;//cứ 0.2s cộng 1 lần ==> 5 = 1s
+                if(snakeBody_x.length>1){
+                    snakeUpdate(oy,ox);
+                }else{
+                    snake[oy][ox]=0;
+                }
+                switch(direction){
+                    case 'up':
+                        if(oy>0){
+                            oy--;
+                        }else if(timeCollionBorders>=5){// nếu 1s trước k life không bị trừ thì chạy câu lệnh bên trong
+                            life--;
+                            timeCollionBorders = 0;
+                            document.getElementById("hurt").play();// gán âm thanh 
+                            
+                        }
+                        break;
+                    case 'down':
+                        if(oy<limit_y){
+                            oy++;
+                        }else if(timeCollionBorders>=5){
+                            life--;
+                            timeCollionBorders = 0;
+                            document.getElementById("hurt").play();
+                        }
+                        break;
+                    case 'left':
+                        if(ox>0){
+                            ox--;
+                        }else if(timeCollionBorders>=5){
+                            life--;
+                            timeCollionBorders = 0;
+                            document.getElementById("hurt").play();
+                        }
+                        break;
+                    case 'right':
+                        if(ox<limit_x){
+                            ox++;
+                        }else if(timeCollionBorders>=5){
+                            life--;
+                            timeCollionBorders = 0;
+                            document.getElementById("hurt").play();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                //  check vị trí chấm đỏ với đầu rắn //
+                if(oy===fruit_y&&ox==fruit_x){
+                    document.getElementById("audio").play();
+                    fruit();
+                    point++;
+                    snakeBody_x.push(ox);
+                    snakeBody_y.push(oy);
+                    document.getElementById("point").innerHTML="Point: "+point;
+                    
+                }
+                // kiểm tra va chạm giữa phần đầu và phần thân //
+                if(snakeBody_x.length>0){
+                    for(var i=0;i<snakeBody_y.length-1;i++){
+                        if(oy===snakeBody_y[i]&&ox===snakeBody_x[i]&&timeCollionBorders>=5){
+                            life--;
+                            document.getElementById("hurt").play();
+                            timeCollionBorders=0;
+
+                        }
+                    }
+                }
+                // kiểm tra số mạng còn lại và gọi hàm để update lại hình ảnh //
+                if(life>0){
+                    drawlife(life);
+                }else{
+                    drawlife(life);
+                    display.style.display="none";
+                    displayLife.innerHTML=" You Die!!";
+                    is_die=true;
+                    document.getElementById("gameover").play();
+                }
+                // vẽ lại màn hình game  //
+                snake[oy][ox]=1;
+                gamedraw();
+            }
+        }
+
+        //***   dùng để nhận biết phím ấn tương tác với màn hình game  //
+        window.addEventListener("keydown",function(envent){
+            let keyCode = event.keyCode;
+            if(keyCode===38){//đi lên
+                direction= "up";
+            }else if(keyCode===40){//đi xuống
+                direction= "down";
+            }else if(keyCode===37){//sang trái
+                direction= "left";
+            }else if(keyCode===39){//sang phải
+                direction= "right";
+            }    
+        }
+        )
+    </script>
+</body>
+</html>
